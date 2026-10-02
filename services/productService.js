@@ -2,7 +2,7 @@ import Product from "../models/productModel.js";
 
 // Fetch all products
 export const getAllProducts = async () => {
-  return await Product.find().sort({ createdAt: -1 });
+  return await Product.find();
 };
 
 // Fetch a single product by ID

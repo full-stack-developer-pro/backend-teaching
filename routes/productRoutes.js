@@ -9,13 +9,19 @@ import {
 
 const router = express.Router();
 
-router.route("/")
-  .get(getProducts)
-  .post(createProduct);
+// Get all products
+router.get("/api/products/", getProducts);
 
-router.route("/:id")
-  .get(getProduct)
-  .put(updateProduct)
-  .delete(deleteProduct);
+
+router.post("/api/products/", createProduct);
+
+// Get a single product by ID
+router.get("/api/products/:id", getProduct);
+
+// Update a product by ID
+router.put("/api/products/:id", updateProduct);
+
+// Delete a product by ID
+router.delete("/api/products/:id", deleteProduct);
 
 export default router;

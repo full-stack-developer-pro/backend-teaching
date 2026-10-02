@@ -1,5 +1,6 @@
 import * as productService from "../services/productService.js";
 
+
 // @desc    Get all products
 // @route   GET /api/products
 export const getProducts = async (req, res, next) => {

@@ -27,7 +27,7 @@ app.get("/", (req, res) => {
 });
 
 // Mount Routes
-app.use("/api/products", productRoutes);
+app.use(productRoutes);
 
 // Error Handling Middleware
 app.use(notFound);
