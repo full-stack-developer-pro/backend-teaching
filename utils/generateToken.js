@@ -1,15 +1,14 @@
-/**
- * Helper utility to generate a secure random token or identifier
- * @param {number} length - Desired token length
- * @returns {string} Generated token
- */
-export const generateToken = (length = 32) => {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let token = "";
-  for (let i = 0; i < length; i++) {
-    token += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return token;
+import jwt from "jsonwebtoken";
+
+// Generate a signed JWT token
+export const generateToken = (userId, role = "user") => {
+  return jwt.sign(
+    { userId, role },
+    process.env.JWT_SECRET || "fallback_default_secret_key",
+    {
+      expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+    }
+  );
 };
 
 export default generateToken;

@@ -1,8 +1,6 @@
 import * as productService from "../services/productService.js";
 
-
-// @desc    Get all products
-// @route   GET /api/products
+// Get all products
 export const getProducts = async (req, res, next) => {
   try {
     const products = await productService.getAllProducts();
@@ -16,8 +14,7 @@ export const getProducts = async (req, res, next) => {
   }
 };
 
-// @desc    Get single product by ID
-// @route   GET /api/products/:id
+// Get single product by ID
 export const getProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -39,8 +36,7 @@ export const getProduct = async (req, res, next) => {
   }
 };
 
-// @desc    Create new product
-// @route   POST /api/products
+// Create new product
 export const createProduct = async (req, res, next) => {
   try {
     const { name, price, description, category, inStock } = req.body;
@@ -58,6 +54,7 @@ export const createProduct = async (req, res, next) => {
       description,
       category,
       inStock,
+      user: req.user?._id,
     });
 
     res.status(201).json({
@@ -70,48 +67,76 @@ export const createProduct = async (req, res, next) => {
   }
 };
 
-// @desc    Update product by ID
-// @route   PUT /api/products/:id
+// Update product by ID
 export const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const product = await productService.updateProductById(id, req.body);
+    const existingProduct = await productService.getProductById(id);
 
-    if (!product) {
+    if (!existingProduct) {
       return res.status(404).json({
         success: false,
         message: `Product not found with id: ${id}`,
       });
     }
 
+    // Ownership check: Only owner of the product or admin can update it
+    if (
+      req.user &&
+      req.user.role !== "admin" &&
+      existingProduct.user &&
+      existingProduct.user.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to update this product",
+      });
+    }
+
+    const updatedProduct = await productService.updateProductById(id, req.body);
+
     res.status(200).json({
       success: true,
       message: "Product updated successfully",
-      data: product,
+      data: updatedProduct,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Delete product by ID
-// @route   DELETE /api/products/:id
+// Delete product by ID
 export const deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const product = await productService.deleteProductById(id);
+    const existingProduct = await productService.getProductById(id);
 
-    if (!product) {
+    if (!existingProduct) {
       return res.status(404).json({
         success: false,
         message: `Product not found with id: ${id}`,
       });
     }
 
+    // Ownership check: Only owner of the product or admin can delete it
+    if (
+      req.user &&
+      req.user.role !== "admin" &&
+      existingProduct.user &&
+      existingProduct.user.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to delete this product",
+      });
+    }
+
+    const deletedProduct = await productService.deleteProductById(id);
+
     res.status(200).json({
       success: true,
       message: "Product deleted successfully",
-      data: product,
+      data: deletedProduct,
     });
   } catch (error) {
     next(error);

@@ -24,6 +24,11 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Reference to the user who created this product (Ownership concept - Chapter 12)
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   {
     timestamps: true,
