@@ -1,9 +1,11 @@
-# Backend Teaching Project: Express, MongoDB, Auth & RBAC
+# Backend Teaching Project: Security & MongoDB Relationships
 
-A modular, production-ready MERN backend built for teaching core backend concepts, including:
+A complete, beginner-friendly MERN backend codebase demonstrating:
 - **Chapter 8 & 9**: Complete Products CRUD & Layered MVC Architecture
-- **Chapter 11**: User Authentication (bcrypt password hashing, JWT creation & verification, Protected routes)
-- **Chapter 12**: Roles & Permissions (User vs Admin RBAC, 401 Unauthorized vs 403 Forbidden, Resource ownership checks)
+- **Chapter 11**: User Authentication (bcrypt password hashing, JWT creation & verification)
+- **Chapter 12**: Roles & Permissions (User vs Admin RBAC, 401 vs 403, Resource ownership)
+- **Chapter 13**: Backend Security Basics (Helmet, Rate limiting, CORS, Input validation, Protected secrets)
+- **Chapter 14**: MongoDB Relationships (ObjectId, References, `.populate()`, One-to-One, One-to-Many, Many-to-Many concepts)
 
 ---
 
@@ -12,122 +14,124 @@ A modular, production-ready MERN backend built for teaching core backend concept
 ```text
 node/
 ├── config/
-│   └── db.js                  # MongoDB Mongoose connection
+│   └── db.js                  # MongoDB connection
 ├── controllers/
-│   ├── authController.js      # Register, login, get current user, logout
-│   ├── productController.js   # Product CRUD with auth & ownership verification
-│   └── userController.js      # Admin user management & profile updates
+│   ├── authController.js      # Register, login, profile, logout
+│   ├── categoryController.js  # Category CRUD
+│   ├── orderController.js     # Orders referencing User & Products
+│   ├── postController.js      # User -> Posts (One-to-Many)
+│   ├── productController.js   # Product -> Category & User
+│   └── userController.js      # User management & admin actions
 ├── middleware/
-│   ├── authMiddleware.js      # JWT protect, role authorization (authorize, admin)
-│   ├── errorMiddleware.js     # 404 handler and central error middleware
-│   └── loggerMiddleware.js    # HTTP request logger
+│   ├── authMiddleware.js      # protect (JWT) & authorize / admin (RBAC)
+│   ├── errorMiddleware.js     # 404 handler & central error middleware
+│   ├── loggerMiddleware.js    # Request logger
+│   ├── rateLimiter.js         # express-rate-limit (API & Auth limiters)
+│   └── validateMiddleware.js  # ObjectId format and required field validation
 ├── models/
-│   ├── productModel.js        # Product schema with creator user reference
-│   └── userModel.js           # User schema with bcrypt pre-save hash & matchPassword
+│   ├── categoryModel.js       # Category Schema
+│   ├── orderModel.js          # Order Schema (User + array of Product refs)
+│   ├── postModel.js           # Post Schema (User ref - One-to-Many)
+│   ├── productModel.js        # Product Schema (Category & User refs)
+│   └── userModel.js           # User Schema (bcrypt pre-save hook)
 ├── routes/
-│   ├── authRoutes.js          # /api/auth routes
-│   ├── productRoutes.js       # /api/products routes
-│   └── userRoutes.js          # /api/users routes (Admin & Owner protected)
+│   ├── authRoutes.js          # /api/auth endpoints (rate limited)
+│   ├── categoryRoutes.js      # /api/categories endpoints
+│   ├── orderRoutes.js         # /api/orders endpoints
+│   ├── postRoutes.js          # /api/posts endpoints
+│   ├── productRoutes.js       # /api/products endpoints
+│   └── userRoutes.js          # /api/users endpoints
 ├── services/
-│   ├── authService.js         # Authentication business logic & JWT signing
-│   ├── productService.js      # Product database operations
-│   └── userService.js         # User database queries & operations
+│   ├── authService.js         # Authentication logic
+│   ├── categoryService.js     # Category DB queries
+│   ├── orderService.js        # Order DB queries with nested populate
+│   ├── postService.js         # Post DB queries with user populate
+│   ├── productService.js      # Product DB queries with category/user populate
+│   └── userService.js         # User DB queries
 ├── utils/
-│   ├── generateToken.js       # JWT signing utility
+│   ├── generateToken.js       # JWT signing helper
 │   └── sendEmail.js           # Email helper mock
-├── .env                       # Environment variables (PORT, MONGO_URI, JWT_SECRET)
-├── .env.example               # Environment variables template
-├── app.js                     # Express app configuration & route mounts
-├── package.json               # Dependencies & npm scripts
+├── .env                       # Environment variables (ignored by git)
+├── .env.example               # Template environment variables
+├── app.js                     # Express setup with Helmet, CORS, Rate limiting
 ├── server.js                  # Server entry point
-└── README.md
+└── package.json               # Dependencies & scripts
 ```
 
 ---
 
-## 🔐 Chapter 11: User Authentication
+## 🔒 Chapter 13: Backend Security Basics
+
+1. **Environment Variables (`.env`)**:
+   - Secrets (`MONGO_URI`, `JWT_SECRET`) are kept in `.env` and excluded via `.gitignore`.
+2. **Security Headers (`helmet`)**:
+   - Adds essential HTTP security headers (XSS filter, Content Security Policy, Hide X-Powered-By, etc.).
+3. **CORS Configuration**:
+   - Restricts API access to allowed origins, methods, and headers.
+4. **Rate Limiting (`express-rate-limit`)**:
+   - `apiLimiter`: 100 requests per 15 minutes for general API routes.
+   - `authLimiter`: 10 requests per 15 minutes for `/api/auth/register` and `/api/auth/login` to prevent brute force.
+5. **Input & ObjectId Validation**:
+   - [**`middleware/validateMiddleware.js`**](file:///d:/node/middleware/validateMiddleware.js) rejects malformed IDs with `400 Bad Request` before database queries run.
+6. **No Sensitive Data in Responses**:
+   - `select("-password")` is used when returning user data; stack traces are hidden in production mode.
+
+---
+
+## 🔗 Chapter 14: Relationships in MongoDB
 
 ### Concepts
-1. **Password Hashing with `bcryptjs`**:
-   - Passwords are never stored as plain text.
-   - The [**`models/userModel.js`**](file:///d:/node/models/userModel.js) pre-save hook automatically hashes passwords with a salt factor of 10 before saving to MongoDB.
-2. **JWT (JSON Web Token)**:
-   - Generated via [**`utils/generateToken.js`**](file:///d:/node/utils/generateToken.js) upon register/login containing `{ userId, role }`.
-3. **Protected Routes (`protect` middleware)**:
-   - Clients send `Authorization: Bearer <token>` in the HTTP headers.
-   - [**`middleware/authMiddleware.js`**](file:///d:/node/middleware/authMiddleware.js) verifies the token and attaches the user to `req.user`.
 
-### Auth Endpoints
+1. **ObjectId References (`type: mongoose.Schema.Types.ObjectId, ref: 'ModelName'`):**
+   - Instead of duplicating full documents, MongoDB stores the `_id` of the related document.
+2. **`populate()` Method:**
+   - Automatically joins and replaces the `ObjectId` with the actual referenced document fields at query time.
+   ```javascript
+   // Example in postService.js:
+   const posts = await Post.find().populate("user", "name email");
+   ```
 
-| Method | Endpoint | Access | Description |
+### Relationship Examples in This Project
+
+| Relationship | Type | Implementation | Example Endpoint |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Public | Register new user (name, email, password, optional role) |
-| `POST` | `/api/auth/login` | Public | Authenticate user & receive JWT token |
-| `GET` | `/api/auth/me` | Private | Get profile of logged-in user (`protect`) |
-| `POST` | `/api/auth/logout` | Private | Logout user acknowledgement |
+| **User $\rightarrow$ Posts** | One-to-Many | [**`models/postModel.js`**](file:///d:/node/models/postModel.js) has `user` ref | `GET /api/posts` (populates author) |
+| **Product $\rightarrow$ Category** | Many-to-One | [**`models/productModel.js`**](file:///d:/node/models/productModel.js) has `category` ref | `GET /api/products` (populates category) |
+| **Order $\rightarrow$ User & Products** | Many-to-Many / Embedded | [**`models/orderModel.js`**](file:///d:/node/models/orderModel.js) has `user` ref & `orderItems.product` refs | `GET /api/orders/:id` (populates user & products) |
 
 ---
 
-## 🛡️ Chapter 12: Roles & Permissions
+## 📡 API Endpoints Reference
 
-### Concepts
-1. **Authentication vs Authorization**:
-   - **Authentication (401 Unauthorized)**: Checks *who* you are. Fails if no token or token is invalid/expired.
-   - **Authorization (403 Forbidden)**: Checks *what* you can do. Fails if you are logged in but lack the required role or ownership.
-2. **Role-Based Access Control (RBAC)**:
-   - `admin` middleware restricts routes exclusively to administrators (e.g. `GET /api/users`, `DELETE /api/users/:id`).
-3. **Resource Ownership Checks**:
-   - Regular users can only update their own profile (`PUT /api/users/:id`) or products they created (`PUT /api/products/:id`, `DELETE /api/products/:id`).
-   - Admins bypass ownership checks to manage resources platform-wide.
+### 1. Categories (`/api/categories`)
+- `GET /api/categories` — Get all categories (Public)
+- `GET /api/categories/:id` — Get single category (Public)
+- `POST /api/categories` — Create category (Admin only)
+- `PUT /api/categories/:id` — Update category (Admin only)
+- `DELETE /api/categories/:id` — Delete category (Admin only)
 
-### User & Admin Endpoints
+### 2. Posts (`/api/posts`) — *User $\rightarrow$ Posts*
+- `GET /api/posts` — Get all posts with author details (Public)
+- `GET /api/posts/:id` — Get single post (Public)
+- `POST /api/posts` — Create post (Logged-in User)
+- `PUT /api/posts/:id` — Update post (Author or Admin)
+- `DELETE /api/posts/:id` — Delete post (Author or Admin)
 
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/users` | Private / Admin | View all users list |
-| `GET` | `/api/users/:id` | Private / Admin or Owner | View single user profile |
-| `PUT` | `/api/users/:id` | Private / Admin or Owner | Update user profile |
-| `DELETE` | `/api/users/:id` | Private / Admin | Delete a user |
+### 3. Orders (`/api/orders`) — *Order $\rightarrow$ User & Products*
+- `POST /api/orders` — Place an order (Logged-in User)
+- `GET /api/orders/myorders` — Get my orders (Logged-in User)
+- `GET /api/orders/:id` — Get order details (Owner or Admin)
+- `GET /api/orders` — Get all platform orders (Admin only)
 
----
+### 4. Products (`/api/products`) — *Product $\rightarrow$ Category & User*
+- `GET /api/products` — Get all products (populates category & creator)
+- `GET /api/products/:id` — Get single product
+- `POST /api/products` — Create product (Logged-in User)
+- `PUT /api/products/:id` — Update product (Owner or Admin)
+- `DELETE /api/products/:id` — Delete product (Owner or Admin)
 
-## 📡 Complete Products API
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/products` | Public | List all products |
-| `GET` | `/api/products/:id` | Public | Get single product |
-| `POST` | `/api/products` | Private | Create product (stores creator user ID) |
-| `PUT` | `/api/products/:id` | Private / Owner or Admin | Update product |
-| `DELETE` | `/api/products/:id` | Private / Owner or Admin | Delete product |
-
----
-
-## 🧪 Testing Examples
-
-### 1. Register a User
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Alice", "email": "alice@example.com", "password": "password123", "role": "user"}'
-```
-
-### 2. Login
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "alice@example.com", "password": "password123"}'
-```
-*Returns `{ "token": "eyJhbGci..." }`.*
-
-### 3. Access Protected Profile (`401` if omitted, `200` if provided)
-```bash
-curl -X GET http://localhost:5000/api/auth/me \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
-```
-
-### 4. Test Admin-Only Route (`403 Forbidden` if role is "user", `200 OK` if role is "admin")
-```bash
-curl -X GET http://localhost:5000/api/users \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
-```
+### 5. Authentication (`/api/auth`)
+- `POST /api/auth/register` — Register user (Rate limited)
+- `POST /api/auth/login` — Login & get JWT (Rate limited)
+- `GET /api/auth/me` — Get current profile (`protect`)
+- `POST /api/auth/logout` — Logout user

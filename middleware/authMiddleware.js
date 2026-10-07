@@ -59,3 +59,4 @@ export const authorize = (...roles) => {
 
 // Admin middleware shortcut
 export const admin = authorize("admin");
+

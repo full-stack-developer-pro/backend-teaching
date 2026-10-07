@@ -1,43 +1,55 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+
+// Middlewares
+import loggerMiddleware from "./middleware/loggerMiddleware.js";
+import { apiLimiter } from "./middleware/rateLimiter.js";
+import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
+
+// Routes
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
-import loggerMiddleware from "./middleware/loggerMiddleware.js";
-import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
+import postRoutes from "./routes/postRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
 
 const app = express();
 
-// Core Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security Headers (Chapter 13)
+app.use(helmet());
+
+// CORS Configuration (Chapter 13)
+app.use(
+  cors({
+    origin: process.env.ALLOWED_ORIGIN || "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// Body Parsers with payload size limits (Security practice)
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+
+// Request Logger
 app.use(loggerMiddleware);
 
-// Base API Welcome Route
+// Rate Limiting on all API routes (Chapter 13)
+app.use("/api", apiLimiter);
+
+// Welcome Root Route
 app.get("/", (req, res) => {
   res.json({
-    message: "Welcome to Backend Teaching API (Auth, RBAC & CRUD)",
-    endpoints: {
-      auth: {
-        register: "POST /api/auth/register",
-        login: "POST /api/auth/login",
-        me: "GET /api/auth/me (Protected)",
-        logout: "POST /api/auth/logout (Protected)",
-      },
-      users: {
-        getAllUsers: "GET /api/users (Admin only)",
-        getUserById: "GET /api/users/:id (Admin or Owner)",
-        updateUser: "PUT /api/users/:id (Admin or Owner)",
-        deleteUser: "DELETE /api/users/:id (Admin only)",
-      },
-      products: {
-        getAllProducts: "GET /api/products",
-        getProductById: "GET /api/products/:id",
-        createProduct: "POST /api/products (Protected)",
-        updateProduct: "PUT /api/products/:id (Protected / Owner / Admin)",
-        deleteProduct: "DELETE /api/products/:id (Protected / Owner / Admin)",
-      },
+    message: "Welcome to Backend Teaching API (Security & Relationships)",
+    modules: {
+      auth: "/api/auth",
+      users: "/api/users",
+      categories: "/api/categories",
+      products: "/api/products",
+      posts: "/api/posts",
+      orders: "/api/orders",
     },
   });
 });
@@ -45,9 +57,12 @@ app.get("/", (req, res) => {
 // Mount Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/orders", orderRoutes);
 
-// Error Handling Middleware
+// Error Handlers
 app.use(notFound);
 app.use(errorHandler);
 

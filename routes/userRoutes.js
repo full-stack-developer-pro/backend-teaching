@@ -6,20 +6,18 @@ import {
   deleteUser,
 } from "../controllers/userController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
+import { validateObjectId } from "../middleware/validateMiddleware.js";
 
 const router = express.Router();
 
-// All user routes require authentication (protect)
 router.use(protect);
 
-// Admin-only: Get all users
 router.route("/")
   .get(admin, getUsers);
 
-// Admin or Owner: Get single user, Update user; Admin-only: Delete user
 router.route("/:id")
-  .get(getUser)
-  .put(updateUser)
-  .delete(admin, deleteUser);
+  .get(validateObjectId("id"), getUser)
+  .put(validateObjectId("id"), updateUser)
+  .delete(admin, validateObjectId("id"), deleteUser);
 
 export default router;

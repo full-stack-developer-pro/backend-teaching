@@ -16,15 +16,17 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // Reference to Category (Product -> Category Relationship - Chapter 14)
     category: {
-      type: String,
-      default: "General",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: [true, "Product category reference is required"],
     },
     inStock: {
       type: Boolean,
       default: true,
     },
-    // Reference to the user who created this product (Ownership concept - Chapter 12)
+    // Reference to User creator (User -> Product Ownership)
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
