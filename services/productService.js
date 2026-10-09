@@ -15,6 +15,13 @@ export const getProductById = async (id) => {
     .populate("user", "name email");
 };
 
+// Fetch products created by a specific user (User -> Products One-to-Many lookup)
+export const getProductsByUserId = async (userId) => {
+  return await Product.find({ user: userId })
+    .populate("category", "name description")
+    .sort({ createdAt: -1 });
+};
+
 // Create a new product
 export const createNewProduct = async (productData) => {
   const product = await Product.create(productData);

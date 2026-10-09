@@ -75,6 +75,29 @@ export const getMyOrders = async (req, res, next) => {
   }
 };
 
+// Get orders by specific user ID (Owner or Admin)
+export const getUserOrders = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    if (req.user.role !== "admin" && req.user._id.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to view this user's orders",
+      });
+    }
+
+    const orders = await orderService.getOrdersByUserId(userId);
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: orders,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Get all orders (Admin only)
 export const getAllOrders = async (req, res, next) => {
   try {

@@ -36,6 +36,35 @@ export const getPost = async (req, res, next) => {
   }
 };
 
+// Get posts created by the currently logged-in user
+export const getMyPosts = async (req, res, next) => {
+  try {
+    const posts = await postService.getPostsByUserId(req.user._id);
+    res.status(200).json({
+      success: true,
+      count: posts.length,
+      data: posts,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get posts created by a specific user ID
+export const getUserPosts = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const posts = await postService.getPostsByUserId(userId);
+    res.status(200).json({
+      success: true,
+      count: posts.length,
+      data: posts,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Create new post (Logged in user)
 export const createPost = async (req, res, next) => {
   try {

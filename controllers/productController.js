@@ -36,6 +36,35 @@ export const getProduct = async (req, res, next) => {
   }
 };
 
+// Get products created by the currently logged-in user
+export const getMyProducts = async (req, res, next) => {
+  try {
+    const products = await productService.getProductsByUserId(req.user._id);
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get products created by a specific user ID
+export const getUserProducts = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const products = await productService.getProductsByUserId(userId);
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Create new product
 export const createProduct = async (req, res, next) => {
   try {

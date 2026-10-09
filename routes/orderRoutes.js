@@ -3,6 +3,7 @@ import {
   createOrder,
   getOrder,
   getMyOrders,
+  getUserOrders,
   getAllOrders,
 } from "../controllers/orderController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
@@ -10,14 +11,19 @@ import { validateObjectId } from "../middleware/validateMiddleware.js";
 
 const router = express.Router();
 
-router.route("/")
-  .post(protect, createOrder)
-  .get(protect, admin, getAllOrders);
+router.use(protect);
 
-router.route("/myorders")
-  .get(protect, getMyOrders);
+router.route("/")
+  .post(createOrder)
+  .get(admin, getAllOrders);
+
+// Get orders for currently logged-in user
+router.get("/myorders", getMyOrders);
+
+// Get orders for a specific user (Owner or Admin)
+router.get("/user/:userId", validateObjectId("userId"), getUserOrders);
 
 router.route("/:id")
-  .get(protect, validateObjectId("id"), getOrder);
+  .get(validateObjectId("id"), getOrder);
 
 export default router;

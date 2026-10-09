@@ -2,6 +2,8 @@ import express from "express";
 import {
   getProducts,
   getProduct,
+  getMyProducts,
+  getUserProducts,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -14,6 +16,12 @@ const router = express.Router();
 router.route("/")
   .get(getProducts)
   .post(protect, createProduct);
+
+// Get products created by currently logged-in user
+router.get("/myproducts", protect, getMyProducts);
+
+// Get products created by a specific user ID
+router.get("/user/:userId", validateObjectId("userId"), getUserProducts);
 
 router.route("/:id")
   .get(validateObjectId("id"), getProduct)

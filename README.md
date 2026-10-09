@@ -110,9 +110,11 @@ node/
 - `PUT /api/categories/:id` — Update category (Admin only)
 - `DELETE /api/categories/:id` — Delete category (Admin only)
 
-### 2. Posts (`/api/posts`) — *User $\rightarrow$ Posts*
+### 2. Posts (`/api/posts`) — *User $\rightarrow$ Posts (One-to-Many)*
 - `GET /api/posts` — Get all posts with author details (Public)
-- `GET /api/posts/:id` — Get single post (Public)
+- `GET /api/posts/myposts` — Get posts created by currently logged-in user (`protect`)
+- `GET /api/posts/user/:userId` — Get all posts created by a specific user (Public)
+- `GET /api/posts/:id` — Get single post by ID (Public)
 - `POST /api/posts` — Create post (Logged-in User)
 - `PUT /api/posts/:id` — Update post (Author or Admin)
 - `DELETE /api/posts/:id` — Delete post (Author or Admin)
@@ -120,11 +122,14 @@ node/
 ### 3. Orders (`/api/orders`) — *Order $\rightarrow$ User & Products*
 - `POST /api/orders` — Place an order (Logged-in User)
 - `GET /api/orders/myorders` — Get my orders (Logged-in User)
+- `GET /api/orders/user/:userId` — Get orders for a specific user (Owner or Admin)
 - `GET /api/orders/:id` — Get order details (Owner or Admin)
 - `GET /api/orders` — Get all platform orders (Admin only)
 
 ### 4. Products (`/api/products`) — *Product $\rightarrow$ Category & User*
 - `GET /api/products` — Get all products (populates category & creator)
+- `GET /api/products/myproducts` — Get products created by logged-in user (`protect`)
+- `GET /api/products/user/:userId` — Get products created by a specific user (Public)
 - `GET /api/products/:id` — Get single product
 - `POST /api/products` — Create product (Logged-in User)
 - `PUT /api/products/:id` — Update product (Owner or Admin)
