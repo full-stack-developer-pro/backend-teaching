@@ -61,14 +61,17 @@ export const getOrder = async (req, res, next) => {
   }
 };
 
-// Get logged-in user's orders
+// Get logged-in user's orders (with date filters and pagination)
 export const getMyOrders = async (req, res, next) => {
   try {
-    const orders = await orderService.getOrdersByUserId(req.user._id);
+    const result = await orderService.getOrdersByUserId(req.user._id, req.query);
     res.status(200).json({
       success: true,
-      count: orders.length,
-      data: orders,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.orders,
     });
   } catch (error) {
     next(error);
@@ -87,25 +90,31 @@ export const getUserOrders = async (req, res, next) => {
       });
     }
 
-    const orders = await orderService.getOrdersByUserId(userId);
+    const result = await orderService.getOrdersByUserId(userId, req.query);
     res.status(200).json({
       success: true,
-      count: orders.length,
-      data: orders,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.orders,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get all orders (Admin only)
+// Get all orders across platform (Admin only - with status, date filters, pagination)
 export const getAllOrders = async (req, res, next) => {
   try {
-    const orders = await orderService.getAllOrders();
+    const result = await orderService.getAllOrders(req.query);
     res.status(200).json({
       success: true,
-      count: orders.length,
-      data: orders,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.orders,
     });
   } catch (error) {
     next(error);

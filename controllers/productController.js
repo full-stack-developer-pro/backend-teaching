@@ -1,13 +1,16 @@
 import * as productService from "../services/productService.js";
 
-// Get all products
+// Get all products (with pagination, search, filter, sort, date range, fields)
 export const getProducts = async (req, res, next) => {
   try {
-    const products = await productService.getAllProducts();
+    const result = await productService.getAllProducts(req.query);
     res.status(200).json({
       success: true,
-      count: products.length,
-      data: products,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.products,
     });
   } catch (error) {
     next(error);
@@ -39,11 +42,14 @@ export const getProduct = async (req, res, next) => {
 // Get products created by the currently logged-in user
 export const getMyProducts = async (req, res, next) => {
   try {
-    const products = await productService.getProductsByUserId(req.user._id);
+    const result = await productService.getProductsByUserId(req.user._id, req.query);
     res.status(200).json({
       success: true,
-      count: products.length,
-      data: products,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.products,
     });
   } catch (error) {
     next(error);
@@ -54,11 +60,14 @@ export const getMyProducts = async (req, res, next) => {
 export const getUserProducts = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const products = await productService.getProductsByUserId(userId);
+    const result = await productService.getProductsByUserId(userId, req.query);
     res.status(200).json({
       success: true,
-      count: products.length,
-      data: products,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.products,
     });
   } catch (error) {
     next(error);

@@ -1,4 +1,4 @@
-# Backend Teaching Project: Security & MongoDB Relationships
+# Backend Teaching Project: Security, Relationships & Advanced API Features
 
 A complete, beginner-friendly MERN backend codebase demonstrating:
 - **Chapter 8 & 9**: Complete Products CRUD & Layered MVC Architecture
@@ -6,6 +6,7 @@ A complete, beginner-friendly MERN backend codebase demonstrating:
 - **Chapter 12**: Roles & Permissions (User vs Admin RBAC, 401 vs 403, Resource ownership)
 - **Chapter 13**: Backend Security Basics (Helmet, Rate limiting, CORS, Input validation, Protected secrets)
 - **Chapter 14**: MongoDB Relationships (ObjectId, References, `.populate()`, One-to-One, One-to-Many, Many-to-Many concepts)
+- **Chapter 15**: Advanced API Features (Pagination, Search, Filtering, Sorting, Date filters, Selecting fields, Reusable query logic)
 
 ---
 
@@ -20,7 +21,7 @@ node/
 │   ├── categoryController.js  # Category CRUD
 │   ├── orderController.js     # Orders referencing User & Products
 │   ├── postController.js      # User -> Posts (One-to-Many)
-│   ├── productController.js   # Product -> Category & User
+│   ├── productController.js   # Product -> Category & User (with advanced query features)
 │   └── userController.js      # User management & admin actions
 ├── middleware/
 │   ├── authMiddleware.js      # protect (JWT) & authorize / admin (RBAC)
@@ -60,6 +61,68 @@ node/
 
 ---
 
+## ⚡ Chapter 15: Advanced API Features
+
+All query features are implemented directly using native Mongoose methods (`find()`, `skip()`, `limit()`, `sort()`, `select()`, and `$regex`):
+
+### 1. Pagination
+Divides large datasets into pages using `.skip((page - 1) * limit).limit(limit)`.
+```http
+GET /api/products?page=2&limit=20
+```
+Returns data along with pagination metadata:
+```json
+{
+  "total": 45,
+  "page": 2,
+  "limit": 20,
+  "totalPages": 3,
+  "hasNextPage": true,
+  "hasPrevPage": true
+}
+```
+
+### 2. Search
+Performs case-insensitive keyword searches using `$regex`:
+```http
+GET /api/products?search=iphone
+```
+
+### 3. Filtering
+Filters by exact fields or comparisons (`gte`, `gt`, `lte`, `lt`):
+```http
+GET /api/products?category=670987...&inStock=true
+GET /api/products?price[gte]=100&price[lte]=500
+```
+
+### 4. Sorting
+Sorts ascending or descending (`-` prefix):
+```http
+GET /api/products?sort=price        # Ascending (lowest to highest)
+GET /api/products?sort=-price       # Descending (highest to lowest)
+GET /api/products?sort=-createdAt   # Newest first (default)
+```
+
+### 5. Date Filters
+Filters records created within a specific date range:
+```http
+GET /api/products?startDate=2026-01-01&endDate=2026-12-31
+GET /api/orders?startDate=2026-10-01&endDate=2026-10-31
+```
+
+### 6. Selecting Fields
+Reduces response size by returning only requested fields:
+```http
+GET /api/products?fields=name,price,category
+```
+
+### 7. Combining All Features Together
+```http
+GET /api/products?search=phone&sort=price&page=1&limit=10&fields=name,price,category&startDate=2026-01-01
+```
+
+---
+
 ## 🔒 Chapter 13: Backend Security Basics
 
 1. **Environment Variables (`.env`)**:
@@ -80,19 +143,6 @@ node/
 
 ## 🔗 Chapter 14: Relationships in MongoDB
 
-### Concepts
-
-1. **ObjectId References (`type: mongoose.Schema.Types.ObjectId, ref: 'ModelName'`):**
-   - Instead of duplicating full documents, MongoDB stores the `_id` of the related document.
-2. **`populate()` Method:**
-   - Automatically joins and replaces the `ObjectId` with the actual referenced document fields at query time.
-   ```javascript
-   // Example in postService.js:
-   const posts = await Post.find().populate("user", "name email");
-   ```
-
-### Relationship Examples in This Project
-
 | Relationship | Type | Implementation | Example Endpoint |
 |---|---|---|---|
 | **User $\rightarrow$ Posts** | One-to-Many | [**`models/postModel.js`**](file:///d:/node/models/postModel.js) has `user` ref | `GET /api/posts` (populates author) |
@@ -104,32 +154,32 @@ node/
 ## 📡 API Endpoints Reference
 
 ### 1. Categories (`/api/categories`)
-- `GET /api/categories` — Get all categories (Public)
-- `GET /api/categories/:id` — Get single category (Public)
+- `GET /api/categories` — Get all categories
+- `GET /api/categories/:id` — Get single category
 - `POST /api/categories` — Create category (Admin only)
 - `PUT /api/categories/:id` — Update category (Admin only)
 - `DELETE /api/categories/:id` — Delete category (Admin only)
 
-### 2. Posts (`/api/posts`) — *User $\rightarrow$ Posts (One-to-Many)*
-- `GET /api/posts` — Get all posts with author details (Public)
-- `GET /api/posts/myposts` — Get posts created by currently logged-in user (`protect`)
-- `GET /api/posts/user/:userId` — Get all posts created by a specific user (Public)
-- `GET /api/posts/:id` — Get single post by ID (Public)
+### 2. Posts (`/api/posts`)
+- `GET /api/posts` — Get all posts (supports `search`, `page`, `limit`, `sort`)
+- `GET /api/posts/myposts` — Get posts created by logged-in user (`protect`)
+- `GET /api/posts/user/:userId` — Get posts created by specific user
+- `GET /api/posts/:id` — Get single post by ID
 - `POST /api/posts` — Create post (Logged-in User)
 - `PUT /api/posts/:id` — Update post (Author or Admin)
 - `DELETE /api/posts/:id` — Delete post (Author or Admin)
 
-### 3. Orders (`/api/orders`) — *Order $\rightarrow$ User & Products*
+### 3. Orders (`/api/orders`)
 - `POST /api/orders` — Place an order (Logged-in User)
-- `GET /api/orders/myorders` — Get my orders (Logged-in User)
+- `GET /api/orders/myorders` — Get my orders (supports `startDate`, `endDate`, `page`, `limit`)
 - `GET /api/orders/user/:userId` — Get orders for a specific user (Owner or Admin)
 - `GET /api/orders/:id` — Get order details (Owner or Admin)
-- `GET /api/orders` — Get all platform orders (Admin only)
+- `GET /api/orders` — Get all platform orders (Admin only - supports `startDate`, `endDate`, `status`, `page`, `limit`)
 
-### 4. Products (`/api/products`) — *Product $\rightarrow$ Category & User*
-- `GET /api/products` — Get all products (populates category & creator)
-- `GET /api/products/myproducts` — Get products created by logged-in user (`protect`)
-- `GET /api/products/user/:userId` — Get products created by a specific user (Public)
+### 4. Products (`/api/products`)
+- `GET /api/products` — Get all products (supports `search`, `category`, `price[gte]`, `sort`, `fields`, `page`, `limit`, `startDate`, `endDate`)
+- `GET /api/products/myproducts` — Get products created by logged-in user
+- `GET /api/products/user/:userId` — Get products created by specific user
 - `GET /api/products/:id` — Get single product
 - `POST /api/products` — Create product (Logged-in User)
 - `PUT /api/products/:id` — Update product (Owner or Admin)

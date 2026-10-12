@@ -1,13 +1,16 @@
 import * as postService from "../services/postService.js";
 
-// Get all posts
+// Get all posts (with search, sort, pagination)
 export const getPosts = async (req, res, next) => {
   try {
-    const posts = await postService.getAllPosts();
+    const result = await postService.getAllPosts(req.query);
     res.status(200).json({
       success: true,
-      count: posts.length,
-      data: posts,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.posts,
     });
   } catch (error) {
     next(error);
@@ -39,11 +42,14 @@ export const getPost = async (req, res, next) => {
 // Get posts created by the currently logged-in user
 export const getMyPosts = async (req, res, next) => {
   try {
-    const posts = await postService.getPostsByUserId(req.user._id);
+    const result = await postService.getPostsByUserId(req.user._id, req.query);
     res.status(200).json({
       success: true,
-      count: posts.length,
-      data: posts,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.posts,
     });
   } catch (error) {
     next(error);
@@ -54,11 +60,14 @@ export const getMyPosts = async (req, res, next) => {
 export const getUserPosts = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const posts = await postService.getPostsByUserId(userId);
+    const result = await postService.getPostsByUserId(userId, req.query);
     res.status(200).json({
       success: true,
-      count: posts.length,
-      data: posts,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      totalPages: result.totalPages,
+      data: result.posts,
     });
   } catch (error) {
     next(error);
