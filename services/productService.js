@@ -2,7 +2,7 @@ import Product from "../models/productModel.js";
 
 // Fetch all products with search, filter, sort, and pagination
 export const getAllProducts = async (queryParams = {}) => {
-  const { search, category, sort, fields, page = 1, limit = 10, startDate, endDate } = queryParams;
+  const { search, category, sort, fields, page = 1, limit = 2, startDate, endDate } = queryParams;
 
   // 1. Build Filter object
   const filter = {};
@@ -26,7 +26,7 @@ export const getAllProducts = async (queryParams = {}) => {
 
   // 2. Pagination calculation
   const pageNum = Number(page) || 1;
-  const limitNum = Number(limit) || 10;
+  const limitNum = Number(limit) || 2;
   const skip = (pageNum - 1) * limitNum;
 
   // 3. Sorting (default: newest first)
@@ -37,13 +37,11 @@ export const getAllProducts = async (queryParams = {}) => {
 
   // 5. Execute MongoDB query
   const total = await Product.countDocuments(filter);
-  const products = await Product.find(filter)
+  const products = await Product.find(filter).skip(skip).limit(limitNum)
     .populate("category", "name description")
     .populate("user", "name email")
     .sort(sortBy)
-    .select(selectFields)
-    .skip(skip)
-    .limit(limitNum);
+    .select(selectFields);
 
   return {
     total,

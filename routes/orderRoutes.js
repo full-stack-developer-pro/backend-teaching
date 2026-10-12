@@ -15,7 +15,7 @@ router.use(protect);
 
 router.route("/")
   .post(createOrder)
-  .get(admin, getAllOrders);
+  .get(getAllOrders);
 
 // Get orders for currently logged-in user
 router.get("/myorders", getMyOrders);
