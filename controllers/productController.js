@@ -77,7 +77,7 @@ export const getUserProducts = async (req, res, next) => {
 // Create new product
 export const createProduct = async (req, res, next) => {
   try {
-    const { name, price, description, category, inStock } = req.body;
+    const { name, price, description, category, inStock, image } = req.body;
 
     if (!name || price === undefined) {
       return res.status(400).json({
@@ -92,6 +92,7 @@ export const createProduct = async (req, res, next) => {
       description,
       category,
       inStock,
+      image,
       user: req.user?._id,
     });
 

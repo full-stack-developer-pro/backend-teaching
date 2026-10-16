@@ -22,6 +22,11 @@ const productSchema = new mongoose.Schema(
       ref: "Category",
       required: [true, "Product category reference is required"],
     },
+    // Image URL stored in MongoDB (Chapter 16)
+    image: {
+      type: String,
+      default: "/uploads/default-product.png",
+    },
     inStock: {
       type: Boolean,
       default: true,

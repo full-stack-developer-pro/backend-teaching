@@ -22,6 +22,16 @@ export const errorHandler = (err, req, res, next) => {
     message = Object.values(err.errors).map((val) => val.message).join(", ");
   }
 
+  // Handle Multer upload errors (Chapter 16)
+  if (err.name === "MulterError") {
+    statusCode = 400;
+    if (err.code === "LIMIT_FILE_SIZE") {
+      message = "File is too large! Maximum allowed size is 5MB";
+    } else {
+      message = `Upload error: ${err.message}`;
+    }
+  }
+
   res.status(statusCode).json({
     success: false,
     message,

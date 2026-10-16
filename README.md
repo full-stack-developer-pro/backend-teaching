@@ -7,6 +7,7 @@ A complete, beginner-friendly MERN backend codebase demonstrating:
 - **Chapter 13**: Backend Security Basics (Helmet, Rate limiting, CORS, Input validation, Protected secrets)
 - **Chapter 14**: MongoDB Relationships (ObjectId, References, `.populate()`, One-to-One, One-to-Many, Many-to-Many concepts)
 - **Chapter 15**: Advanced API Features (Pagination, Search, Filtering, Sorting, Date filters, Selecting fields, Reusable query logic)
+- **Chapter 16**: File & Image Uploads (multipart/form-data, Multer, File validation, Local vs Cloud storage, Cloudinary/S3 concept, Saving image URLs in MongoDB)
 
 ---
 
@@ -22,18 +23,20 @@ node/
 │   ├── orderController.js     # Orders referencing User & Products
 │   ├── postController.js      # User -> Posts (One-to-Many)
 │   ├── productController.js   # Product -> Category & User (with advanced query features)
+│   ├── uploadController.js    # File & Image uploads (Local & Cloud concept) [Chapter 16]
 │   └── userController.js      # User management & admin actions
 ├── middleware/
 │   ├── authMiddleware.js      # protect (JWT) & authorize / admin (RBAC)
-│   ├── errorMiddleware.js     # 404 handler & central error middleware
+│   ├── errorMiddleware.js     # 404 handler & central error middleware (Multer errors)
 │   ├── loggerMiddleware.js    # Request logger
 │   ├── rateLimiter.js         # express-rate-limit (API & Auth limiters)
+│   ├── uploadMiddleware.js    # Multer configuration, validation & diskStorage [Chapter 16]
 │   └── validateMiddleware.js  # ObjectId format and required field validation
 ├── models/
 │   ├── categoryModel.js       # Category Schema
 │   ├── orderModel.js          # Order Schema (User + array of Product refs)
 │   ├── postModel.js           # Post Schema (User ref - One-to-Many)
-│   ├── productModel.js        # Product Schema (Category & User refs)
+│   ├── productModel.js        # Product Schema (Category, User refs, Image URL)
 │   └── userModel.js           # User Schema (bcrypt pre-save hook)
 ├── routes/
 │   ├── authRoutes.js          # /api/auth endpoints (rate limited)
@@ -41,20 +44,23 @@ node/
 │   ├── orderRoutes.js         # /api/orders endpoints
 │   ├── postRoutes.js          # /api/posts endpoints
 │   ├── productRoutes.js       # /api/products endpoints
+│   ├── uploadRoutes.js        # /api/upload endpoints [Chapter 16]
 │   └── userRoutes.js          # /api/users endpoints
 ├── services/
 │   ├── authService.js         # Authentication logic
 │   ├── categoryService.js     # Category DB queries
+│   ├── cloudUploadService.js  # Cloudinary / S3 cloud storage concept [Chapter 16]
 │   ├── orderService.js        # Order DB queries with nested populate
 │   ├── postService.js         # Post DB queries with user populate
 │   ├── productService.js      # Product DB queries with category/user populate
 │   └── userService.js         # User DB queries
+├── uploads/                   # Local image storage folder (served at /uploads)
 ├── utils/
 │   ├── generateToken.js       # JWT signing helper
 │   └── sendEmail.js           # Email helper mock
 ├── .env                       # Environment variables (ignored by git)
 ├── .env.example               # Template environment variables
-├── app.js                     # Express setup with Helmet, CORS, Rate limiting
+├── app.js                     # Express setup with Helmet, CORS, Rate limiting & Static /uploads
 ├── server.js                  # Server entry point
 └── package.json               # Dependencies & scripts
 ```
@@ -190,3 +196,50 @@ GET /api/products?search=phone&sort=price&page=1&limit=10&fields=name,price,cate
 - `POST /api/auth/login` — Login & get JWT (Rate limited)
 - `GET /api/auth/me` — Get current profile (`protect`)
 - `POST /api/auth/logout` — Logout user
+
+### 6. File & Image Uploads (`/api/upload`) — [Chapter 16]
+- `POST /api/upload` — Upload single image to Local Disk (`multipart/form-data`, field: `image`, `protect`)
+- `POST /api/upload/multiple` — Upload multiple images to Local Disk (up to 5, field: `images`, `protect`)
+- `POST /api/upload/cloud` — Upload single image to Cloudinary CDN (`protect`)
+- `POST /api/upload/cloud/multiple` — Upload multiple images to Cloudinary CDN (up to 5, field: `images`, `protect`)
+- `DELETE /api/upload/cloud` — Delete an image from Cloudinary by `publicId` (`protect`)
+- `GET /uploads/:filename` — Statically serve locally uploaded image directly in browser/React
+
+---
+
+## 📸 Chapter 16: File & Image Uploads
+
+### 1. `multipart/form-data`
+Standard JSON (`express.json()`) cannot transport binary file data. To send files from React or Postman, the request `Content-Type` must be set to `multipart/form-data`.
+
+### 2. Multer Middleware ([`middleware/uploadMiddleware.js`](file:///d:/node/middleware/uploadMiddleware.js))
+Multer handles file extraction and disk saving:
+- `diskStorage`: Configures destination folder (`/uploads`) and unique filenames (`image-<timestamp>-<random>.<ext>`).
+- `limits`: Sets a maximum file size (5MB).
+- `fileFilter`: Validates file extensions and MIME types (only `.jpg`, `.jpeg`, `.png`, `.webp`).
+
+### 3. Local Storage vs Cloud Storage
+- **Local Storage**: Saved in the server's local `/uploads` folder and served via `express.static()`. Good for development, but server restarts on hosts like Render or Heroku wipe local files.
+- **Cloud Storage (Cloudinary / AWS S3)**: Files are uploaded to remote storage servers, returning a permanent CDN URL (`https://res.cloudinary.com/...`).
+
+### 4. Saving Image URLs in MongoDB
+**Never store binary image buffers directly in MongoDB.**
+Instead:
+1. Upload file via `POST /api/upload/cloud` (Cloudinary) or `POST /api/upload` (Local).
+2. Backend responds with `{ cloudUrl: "https://res.cloudinary.com/..." }`.
+3. Save that `cloudUrl` string into MongoDB under `Product.image`.
+4. The React frontend displays the image directly: `<img src={product.image} />`.
+
+### 5. Cloudinary Setup Steps
+1. Sign up for a free account at [cloudinary.com](https://cloudinary.com).
+2. On your Cloudinary Dashboard, copy:
+   - **Cloud Name**
+   - **API Key**
+   - **API Secret**
+3. Paste them into your `.env` file:
+   ```env
+   CLOUDINARY_CLOUD_NAME=your_cloud_name_here
+   CLOUDINARY_API_KEY=your_api_key_here
+   CLOUDINARY_API_SECRET=your_api_secret_here
+   ```
+4. Test by uploading an image to `POST /api/upload/cloud`!

@@ -1,0 +1,18 @@
+$kind: http-request
+name: ""
+url: http://localhost:5000/api/upload/cloud
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: image
+      src:
+        - /C:/Users/dell/Desktop/wevillage_logo_main.webp
+      description: ""
+      disabled: false
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWMzOTA4Nzg0OGZlOTk5ZWNmOGI4ZDQiLCJyb2xlIjoidXNlciIsImlhdCI6MTc5MjEzOTE3NSwiZXhwIjoxNzkyMjI1NTc1fQ.2OPtVMWn5Itq7wV71gdWi5TsYoAOvNTPz_62hQ8mE5c
+order: 1000
